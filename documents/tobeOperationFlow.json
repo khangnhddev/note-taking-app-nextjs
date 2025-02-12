@@ -1,0 +1,83 @@
+{
+  "key": "tobeOperationFlow",
+  "value": [
+    {
+      "id": "eeb8eb8e-25d2-4134-8fc2-5cd200fabd3b",
+      "projectId": "2883bfde-c574-4499-a22b-2fdb6b694ef6",
+      "category": "Basic search functionality",
+      "value": "{\n  \"mermaid\": \"sequenceDiagram\\n    actor Student\\n    participant App\\n    participant SearchEngine\\n    participant Database\\n    Student->>App: Enter search keyword\\n    Student->>App: Select subject filter (optional)\\n    App->>SearchEngine: Send search request with filters\\n    SearchEngine->>Database: Query notes by keyword and subject\\n    Database-->>SearchEngine: Return matching results\\n    SearchEngine->>SearchEngine: Sort by relevance\\n    SearchEngine->>SearchEngine: Apply keyword highlighting\\n    SearchEngine-->>App: Return processed results\\n    App-->>Student: Display results with highlights\\n    Student->>App: Select search result\\n    App->>Database: Fetch note details\\n    Database-->>App: Return full note content\\n    App-->>Student: Show detailed note view\\n    Student->>App: Export/Share/Edit note (optional)\\n    App-->>Student: Confirm action completion\"\n}",
+      "phase": 1,
+      "version": 1,
+      "status": "published",
+      "lastUpdatedBy": "fc781005-b4ed-4099-9926-f626d1237837",
+      "createdAt": "2025-02-12T08:17:31.912Z",
+      "updatedAt": "2025-02-12T08:17:31.912Z",
+      "internalId": "dd28eaa8-1ee9-404f-b290-2ca2730c4ac3"
+    },
+    {
+      "id": "243eff86-14cc-4792-a373-5fda02401647",
+      "projectId": "2883bfde-c574-4499-a22b-2fdb6b694ef6",
+      "category": "Text note creation and editing",
+      "value": "{\n  \"mermaid\": \"sequenceDiagram\\n    actor Student\\n    participant App as MyNotes App\\n    participant Cache as Local Cache\\n    participant NoteDB as Note Database\\n    participant Sync as Sync Service\\n\\n    Student->>App: Open note editor\\n    App->>App: Initialize editor with template\\n    App->>App: Auto-save draft enabled\\n\\n    par Auto Save Process\\n        Student->>App: Enter note title\\n        Student->>App: Select subject category\\n        Student->>App: Input note content\\n        App->>Cache: Save draft periodically\\n    end\\n\\n    Student->>App: Tap Save button\\n    App->>App: Validate input data\\n    App->>NoteDB: Save note data\\n    App->>Sync: Trigger sync process\\n    par Sync Process\\n        Sync->>NoteDB: Update cloud backup\\n        NoteDB-->>App: Confirm save success\\n        App->>Cache: Clear draft\\n    end\\n\\n    App-->>Student: Show success notification\\n    opt View Note\\n        Student->>App: View saved note\\n        App->>Cache: Check local cache\\n        alt Cache exists\\n            Cache-->>App: Return cached data\\n        else No cache\\n            App->>NoteDB: Fetch note data\\n            NoteDB-->>App: Return note data\\n            App->>Cache: Update cache\\n        end\\n        App-->>Student: Display note content\\n    end\"\n}",
+      "phase": 1,
+      "version": 1,
+      "status": "published",
+      "lastUpdatedBy": "fc781005-b4ed-4099-9926-f626d1237837",
+      "createdAt": "2025-02-12T08:17:31.857Z",
+      "updatedAt": "2025-02-12T08:17:31.857Z",
+      "internalId": "9d909363-0b36-4b43-9cee-1dd051f424a0"
+    },
+    {
+      "id": "a80514c3-5141-40de-9151-81749a3b911a",
+      "projectId": "2883bfde-c574-4499-a22b-2fdb6b694ef6",
+      "category": "Checklist creation and management",
+      "value": "{\n  \"mermaid\": \"sequenceDiagram\\n    actor Student\\n    participant App\\n    participant ChecklistManager\\n    participant SubjectManager\\n    participant Database\\n    \\n    Student->>App: Open checklist section\\n    App->>SubjectManager: Get subject categories\\n    SubjectManager->>Database: Fetch subject list\\n    Database-->>SubjectManager: Return subjects\\n    SubjectManager-->>App: Display subject options\\n    \\n    Student->>App: Select subject\\n    App->>ChecklistManager: Request checklist view\\n    ChecklistManager->>Database: Fetch checklists by subject\\n    Database-->>ChecklistManager: Return filtered checklists\\n    ChecklistManager-->>App: Display checklists\\n    \\n    Student->>App: Create new checklist\\n    App->>ChecklistManager: Initialize checklist\\n    Student->>App: Add checklist title\\n    Student->>App: Add checklist items\\n    Student->>App: Set item priorities\\n    \\n    App->>ChecklistManager: Validate checklist data\\n    ChecklistManager->>Database: Save checklist\\n    Database-->>ChecklistManager: Confirm save\\n    \\n    Student->>App: Toggle item completion\\n    App->>ChecklistManager: Update item status\\n    ChecklistManager->>Database: Update completion status\\n    Database-->>ChecklistManager: Confirm update\\n    \\n    ChecklistManager->>App: Update UI\\n    App-->>Student: Display success message\\n    App-->>Student: Show updated checklist\"\n}",
+      "phase": 1,
+      "version": 1,
+      "status": "published",
+      "lastUpdatedBy": "fc781005-b4ed-4099-9926-f626d1237837",
+      "createdAt": "2025-02-12T08:17:31.883Z",
+      "updatedAt": "2025-02-12T08:17:31.883Z",
+      "internalId": "390b0f62-ae76-4cad-8c8a-b868942f9505"
+    },
+    {
+      "id": "261598f2-bbbf-4fbf-9ce4-b686dcfd0843",
+      "projectId": "2883bfde-c574-4499-a22b-2fdb6b694ef6",
+      "category": "Subject-based note organization",
+      "value": "{\n  \"mermaid\": \"sequenceDiagram\\n    actor Student\\n    participant App\\n    participant SubjectManager\\n    participant NoteManager\\n    participant Storage\\n    participant CloudSync\\n\\n    Student->>App: Open MyNotes app\\n    App->>SubjectManager: Initialize subjects\\n    SubjectManager->>Storage: Fetch subjects\\n    Storage-->>SubjectManager: Return subjects\\n    SubjectManager-->>App: Display organized subjects\\n\\n    Student->>App: Select/Create subject\\n    App->>SubjectManager: Process subject action\\n    SubjectManager->>Storage: Update subject data\\n    Storage-->>SubjectManager: Confirm update\\n\\n    Student->>App: Create/Edit note\\n    App->>NoteManager: Process note\\n    NoteManager->>Storage: Save note with subject tag\\n    Storage-->>NoteManager: Confirm save\\n    NoteManager->>CloudSync: Sync changes\\n    CloudSync-->>NoteManager: Confirm sync\\n\\n    Student->>App: Search/Filter notes\\n    App->>NoteManager: Process search request\\n    NoteManager->>Storage: Query notes\\n    Storage-->>NoteManager: Return filtered notes\\n    NoteManager-->>App: Display results\\n    App-->>Student: Show organized notes\"\n}",
+      "phase": 1,
+      "version": 1,
+      "status": "published",
+      "lastUpdatedBy": "fc781005-b4ed-4099-9926-f626d1237837",
+      "createdAt": "2025-02-12T08:17:31.895Z",
+      "updatedAt": "2025-02-12T08:17:31.895Z",
+      "internalId": "d1409ad6-d683-4ad5-8967-653aed7b6639"
+    },
+    {
+      "id": "d2c021d3-b0cc-4b0f-bb56-baf1311f6dda",
+      "projectId": "2883bfde-c574-4499-a22b-2fdb6b694ef6",
+      "category": "Cross-platform compatibility (Android & iOS)",
+      "value": "{\n  \"mermaid\": \"sequenceDiagram\\n    actor Student\\n    participant App\\n    participant Backend\\n    participant LocalStorage\\n    participant CloudStorage\\n    \\n    Student->>App: Launch MyNotes app\\n    App->>Backend: Request authentication\\n    Backend->>App: Return auth token\\n    \\n    opt Create Content\\n        Student->>App: Create note/checklist\\n        App->>LocalStorage: Save content locally\\n        App->>Backend: Sync new content\\n        Backend->>CloudStorage: Store content\\n        CloudStorage-->>Backend: Confirm storage\\n        Backend-->>App: Sync confirmation\\n    end\\n    \\n    opt Organize Content\\n        Student->>App: Select/Create subject\\n        App->>LocalStorage: Organize content\\n        App->>Backend: Update organization\\n        Backend->>CloudStorage: Update structure\\n    end\\n    \\n    opt Access Content\\n        Student->>App: Request content view\\n        App->>LocalStorage: Fetch local data\\n        App->>Backend: Check for updates\\n        Backend->>CloudStorage: Retrieve updates\\n        CloudStorage-->>Backend: Return updates\\n        Backend-->>App: Sync latest content\\n        App->>Student: Display content\\n    end\\n    \\n    opt Edit Content\\n        Student->>App: Modify content\\n        App->>LocalStorage: Save changes locally\\n        App->>Backend: Sync changes\\n        Backend->>CloudStorage: Update content\\n        CloudStorage-->>Backend: Confirm update\\n        Backend-->>App: Sync complete\\n    end\"\n}",
+      "phase": 1,
+      "version": 1,
+      "status": "published",
+      "lastUpdatedBy": "fc781005-b4ed-4099-9926-f626d1237837",
+      "createdAt": "2025-02-12T08:17:31.903Z",
+      "updatedAt": "2025-02-12T08:17:31.903Z",
+      "internalId": "b9401d89-dc1a-484d-9a26-da9142f1eabd"
+    },
+    {
+      "id": "3b013937-a3f8-47be-ad8b-158174b06586",
+      "projectId": "2883bfde-c574-4499-a22b-2fdb6b694ef6",
+      "category": "Data backup and sync",
+      "value": "{\n  \"mermaid\": \"sequenceDiagram\\n    participant U as User\\n    participant A as App\\n    participant CS as Cloud Service\\n    participant LS as Local Storage\\n    U->>A: Open backup settings\\n    A->>U: Show backup options (Cloud/Local)\\n    alt Cloud Backup\\n        U->>A: Select cloud backup\\n        A->>CS: Authenticate user\\n        CS->>A: Authentication success\\n        A->>CS: Upload notes data\\n        CS->>A: Confirm backup complete\\n    else Local Backup\\n        U->>A: Select local backup\\n        A->>LS: Generate backup file\\n        LS->>A: Backup file created\\n    end\\n    A->>U: Display backup confirmation\\n    Note over U,CS: Auto Sync Process\\n    loop Every 15 minutes\\n        A->>CS: Check for updates\\n        alt Changes detected\\n            CS->>A: Send modified data\\n            A->>A: Merge changes\\n            A->>U: Notify sync complete\\n        end\\n    end\\n    Note over U,CS: Data Recovery\\n    U->>A: Request data restore\\n    A->>CS: Fetch backup data\\n    CS->>A: Send backup data\\n    A->>A: Validate data\\n    A->>U: Confirm restoration complete\"\n}",
+      "phase": 1,
+      "version": 1,
+      "status": "published",
+      "lastUpdatedBy": "fc781005-b4ed-4099-9926-f626d1237837",
+      "createdAt": "2025-02-12T08:17:31.923Z",
+      "updatedAt": "2025-02-12T08:17:31.923Z",
+      "internalId": "ddba6057-8022-4dfc-aa84-6c1745cf43d0"
+    }
+  ]
+}

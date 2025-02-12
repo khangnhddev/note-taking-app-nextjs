@@ -1,0 +1,83 @@
+{
+  "key": "asisOperationFlow",
+  "value": [
+    {
+      "id": "c8c82e8c-e3e8-48eb-822e-c03f1a72e1f3",
+      "projectId": "2883bfde-c574-4499-a22b-2fdb6b694ef6",
+      "category": "Text note creation and editing",
+      "value": "{\n  \"mermaid\": \"sequenceDiagram\\n    actor Student\\n    participant App as MyNotes App\\n    participant NoteDB as Note Database\\n    Student->>App: Open note editor\\n    App->>App: Display blank note template\\n    Student->>App: Enter note title\\n    Student->>App: Select subject category\\n    Student->>App: Input note content\\n    Student->>App: Tap Save button\\n    App->>NoteDB: Save note data\\n    NoteDB-->>App: Confirm save success\\n    App-->>Student: Display save confirmation\\n    Student->>App: View saved note\\n    App->>NoteDB: Fetch note data\\n    NoteDB-->>App: Return note data\\n    App-->>Student: Display note content\"\n}",
+      "phase": 1,
+      "version": 1,
+      "status": "published",
+      "lastUpdatedBy": "fc781005-b4ed-4099-9926-f626d1237837",
+      "createdAt": "2025-02-12T08:16:45.877Z",
+      "updatedAt": "2025-02-12T08:16:45.877Z",
+      "internalId": "4495e2ef-2a2e-477f-a75d-6f69b4512beb"
+    },
+    {
+      "id": "08ab3edb-c3a8-48fc-ab50-6b423e59ea9a",
+      "projectId": "2883bfde-c574-4499-a22b-2fdb6b694ef6",
+      "category": "Checklist creation and management",
+      "value": "{\n  \"mermaid\": \"sequenceDiagram\\n    actor Student\\n    participant App\\n    participant ChecklistManager\\n    participant Database\\n    Student->>App: Open checklist section\\n    App->>ChecklistManager: Request checklist view\\n    ChecklistManager->>Database: Fetch existing checklists\\n    Database-->>ChecklistManager: Return checklists data\\n    ChecklistManager-->>App: Display checklists\\n    Student->>App: Create new checklist\\n    App->>ChecklistManager: Initialize new checklist\\n    Student->>App: Add checklist items\\n    App->>ChecklistManager: Update checklist items\\n    ChecklistManager->>Database: Save checklist data\\n    Database-->>ChecklistManager: Confirm save\\n    Student->>App: Toggle item completion\\n    App->>ChecklistManager: Update item status\\n    ChecklistManager->>Database: Update completion status\\n    Database-->>ChecklistManager: Confirm update\\n    ChecklistManager-->>App: Refresh checklist view\\n    App-->>Student: Display updated checklist\"\n}",
+      "phase": 1,
+      "version": 1,
+      "status": "published",
+      "lastUpdatedBy": "fc781005-b4ed-4099-9926-f626d1237837",
+      "createdAt": "2025-02-12T08:16:45.911Z",
+      "updatedAt": "2025-02-12T08:16:45.911Z",
+      "internalId": "66f1a0d6-fabc-4e91-9487-1ab54d740179"
+    },
+    {
+      "id": "29397796-7485-4dd6-80c3-b6c7816bd5ed",
+      "projectId": "2883bfde-c574-4499-a22b-2fdb6b694ef6",
+      "category": "Subject-based note organization",
+      "value": "{\n  \"mermaid\": \"sequenceDiagram\\n    actor Student\\n    participant App\\n    participant SubjectList\\n    participant Note\\n    participant Storage\\n    Student->>App: Open MyNotes app\\n    App->>SubjectList: Load subject list\\n    SubjectList->>Storage: Fetch subjects\\n    Storage-->>SubjectList: Return subjects\\n    SubjectList-->>App: Display subjects\\n    Student->>App: Select subject\\n    App->>Note: Load notes for subject\\n    Note->>Storage: Fetch notes\\n    Storage-->>Note: Return notes\\n    Note-->>App: Display notes\\n    Student->>App: Create new note\\n    App->>Storage: Save note\\n    Storage-->>App: Confirm save\\n    App-->>Student: Show success message\"\n}",
+      "phase": 1,
+      "version": 1,
+      "status": "published",
+      "lastUpdatedBy": "fc781005-b4ed-4099-9926-f626d1237837",
+      "createdAt": "2025-02-12T08:16:45.922Z",
+      "updatedAt": "2025-02-12T08:16:45.922Z",
+      "internalId": "a0870443-7a55-42db-a818-9e43f04a230c"
+    },
+    {
+      "id": "416c2509-698e-4c73-9c5a-444e86c5f493",
+      "projectId": "2883bfde-c574-4499-a22b-2fdb6b694ef6",
+      "category": "Cross-platform compatibility (Android & iOS)",
+      "value": "{\n  \"mermaid\": \"sequenceDiagram\\n    actor Student\\n    participant App\\n    participant Backend\\n    participant Storage\\n    Student->>App: Launch MyNotes app\\n    App->>Backend: Authenticate user\\n    Backend->>App: Send auth token\\n    Student->>App: Create new note/checklist\\n    App->>Storage: Save locally\\n    App->>Backend: Sync data\\n    Backend->>Storage: Store in cloud\\n    Student->>App: Select subject category\\n    App->>Storage: Filter notes by subject\\n    Storage->>App: Return filtered notes\\n    App->>Student: Display notes\\n    Student->>App: Edit note\\n    App->>Storage: Update local data\\n    App->>Backend: Sync changes\\n    Backend->>Storage: Update cloud storage\\n    Storage->>Backend: Confirm update\\n    Backend->>App: Sync complete\"\n}",
+      "phase": 1,
+      "version": 1,
+      "status": "published",
+      "lastUpdatedBy": "fc781005-b4ed-4099-9926-f626d1237837",
+      "createdAt": "2025-02-12T08:16:45.931Z",
+      "updatedAt": "2025-02-12T08:16:45.931Z",
+      "internalId": "4a8ec564-aa37-41ac-ae3e-c33debd5e988"
+    },
+    {
+      "id": "34b9c0d3-91a3-4a0d-9db5-512b8fd0db35",
+      "projectId": "2883bfde-c574-4499-a22b-2fdb6b694ef6",
+      "category": "Basic search functionality",
+      "value": "{\n  \"mermaid\": \"sequenceDiagram\\n    actor Student\\n    participant App\\n    participant SearchEngine\\n    participant Database\\n    Student->>App: Enter search keyword\\n    App->>SearchEngine: Send search request\\n    SearchEngine->>Database: Query notes and checklists\\n    Database-->>SearchEngine: Return matching results\\n    SearchEngine-->>App: Process and filter results\\n    App-->>Student: Display search results\\n    Student->>App: Select search result\\n    App->>Database: Fetch full note content\\n    Database-->>App: Return note details\\n    App-->>Student: Show detailed note view\"\n}",
+      "phase": 1,
+      "version": 1,
+      "status": "published",
+      "lastUpdatedBy": "fc781005-b4ed-4099-9926-f626d1237837",
+      "createdAt": "2025-02-12T08:16:45.942Z",
+      "updatedAt": "2025-02-12T08:16:45.942Z",
+      "internalId": "37e9d66e-3edd-408a-ba8a-a86868bbe956"
+    },
+    {
+      "id": "27d80e52-e7b6-47c7-811c-951e66b03bb0",
+      "projectId": "2883bfde-c574-4499-a22b-2fdb6b694ef6",
+      "category": "Data backup and sync",
+      "value": "{\n  \"mermaid\": \"sequenceDiagram\\n    participant U as User\\n    participant A as App\\n    participant C as Cloud Storage\\n    U->>A: Open backup settings\\n    A->>U: Display backup options\\n    U->>A: Enable auto backup\\n    A->>C: Initialize connection\\n    C->>A: Connection confirmed\\n    A->>C: Send note data\\n    C->>A: Confirm data received\\n    A->>U: Show backup success\\n    Note over U,C: Periodic Auto Sync\\n    A->>C: Check for changes\\n    C->>A: Send updates if any\\n    A->>A: Merge changes\\n    A->>U: Display sync status\"\n}",
+      "phase": 1,
+      "version": 1,
+      "status": "published",
+      "lastUpdatedBy": "fc781005-b4ed-4099-9926-f626d1237837",
+      "createdAt": "2025-02-12T08:16:45.951Z",
+      "updatedAt": "2025-02-12T08:16:45.951Z",
+      "internalId": "d1d23367-dc42-4ad1-803c-6b8d4ffdec1f"
+    }
+  ]
+}
