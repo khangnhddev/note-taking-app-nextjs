@@ -1,0 +1,92 @@
+/* Card hover effect */
+.note-card {
+  transition: all 0.3s ease;
+}
+
+.note-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Custom scrollbar */
+textarea {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E0 #EDF2F7;
+}
+
+textarea::-webkit-scrollbar {
+  width: 8px;
+}
+
+textarea::-webkit-scrollbar-track {
+  background: #EDF2F7;
+}
+
+textarea::-webkit-scrollbar-thumb {
+  background-color: #CBD5E0;
+  border-radius: 4px;
+}
+
+/* Drag handle */
+.drag-handle {
+  cursor: grab;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.note-card {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Drag animation */
+.dragging {
+  transform: scale(1.02);
+  opacity: 0.9;
+}
+
+/* Drag handle hover effect */
+.drag-handle:hover .drag-line {
+  background-color: #4B5563;
+}
+
+/* Drop target indicator */
+.drop-target {
+  position: relative;
+}
+
+.drop-target::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px dashed #3B82F6;
+  border-radius: 0.75rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.drop-target.active::after {
+  opacity: 1;
+}
+
+/* Smooth position transitions */
+.note-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.note-card.dragging {
+  transition: none;
+} 

@@ -1,0 +1,35 @@
+{
+  "key": "basicInfos",
+  "value": {
+    "id": "b5d644a3-382e-41f9-8d04-9201f8e305cf",
+    "projectId": "2883bfde-c574-4499-a22b-2fdb6b694ef6",
+    "aboutProject": "MyNotes is a simple note-taking mobile application designed specifically for students, built using React Native for both Android and iOS platforms. The app allows users to create text notes and checklists, organize them by subjects, with a clean and user-friendly interface featuring bright colors.",
+    "currentSystem": "Currently, students often use general note-taking apps or traditional paper notebooks that aren't specifically designed for academic needs.",
+    "problems": "Existing note-taking solutions lack specific features for students such as subject-based organization, integrated checklist functionality, and cross-platform compatibility between Android and iOS devices.",
+    "directionOfSolution": "Develop a cross-platform mobile application using React Native that provides a streamlined note-taking experience with subject organization, text notes, and checklist features. The interface will be intuitive with bright colors appealing to students.",
+    "scope": [
+      "Text note creation and editing",
+      "Checklist creation and management",
+      "Subject-based note organization",
+      "Cross-platform compatibility (Android & iOS)",
+      "Basic search functionality",
+      "Data backup and sync"
+    ],
+    "actor": [
+      "High school students",
+      "College students",
+      "Teachers (secondary users)",
+      "System administrators"
+    ],
+    "budget": "Initial development budget: $15,000 - $20,000, including development, testing, and initial deployment costs",
+    "schedule": "Development Timeline: 3 months (Month 1: Design and basic features, Month 2: Core functionality development, Month 3: Testing and deployment)",
+    "organization": "Project Team: 1 Project Manager, 2 React Native Developers, 1 UI/UX Designer, 1 QA Engineer",
+    "phase": 1,
+    "version": 1,
+    "status": "published",
+    "lastUpdatedBy": "fc781005-b4ed-4099-9926-f626d1237837",
+    "createdAt": "2025-02-12T08:16:23.110Z",
+    "updatedAt": "2025-02-12T08:16:23.110Z",
+    "internalId": "a98d1b16-86d9-404c-a78a-c3ea2444041b"
+  }
+}

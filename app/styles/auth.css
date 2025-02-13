@@ -1,0 +1,45 @@
+.login-container {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.form-group input {
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+  box-shadow: 0 0 0 2px rgba(85, 85, 85, 0.2);
+}
+
+.login-button {
+  transition: all 0.3s ease;
+}
+
+.login-button:hover {
+  transform: translateY(-1px);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-container {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+  .login-container {
+    width: 95%;
+    padding: 1.5rem;
+  }
+} 
