@@ -2,10 +2,11 @@ export interface Note {
   id: string;
   title: string;
   content: string;
-  category_id: string;
-  color: string;
-  position: number;
+  color?: string;
+  category_id?: string;
+  tags?: string[];
   created_at: string;
+  updated_at: string;
   user_id: string;
 }
 

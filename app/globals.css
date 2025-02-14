@@ -1,3 +1,87 @@
 @tailwind base;
 @tailwind components;
-@tailwind utilities; 
+@tailwind utilities;
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
+           transition-colors duration-200 flex items-center justify-center
+           font-medium shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50
+           transition-colors duration-200 flex items-center justify-center
+           font-medium border border-gray-300 shadow-sm;
+  }
+
+  .select-input {
+    @apply px-4 py-2 bg-white border border-gray-300 rounded-lg
+           focus:ring-2 focus:ring-blue-500 focus:border-transparent
+           text-sm text-gray-700 shadow-sm;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.view-transition {
+  opacity: 0;
+  transform: scale(0.98);
+  transition: all 0.3s ease-in-out;
+}
+
+/* Smooth grid/list transition */
+#notes-container {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Grid item hover effect */
+.grid-item:hover {
+  transform: translateY(-2px);
+}
+
+/* List item hover effect */
+.list-item:hover {
+  transform: translateX(2px);
+}
+
+/* Add these to your existing CSS */
+.dragging {
+  opacity: 0.5;
+  transform: scale(1.02);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Smooth transitions for drag and drop */
+.note-item {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.note-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom drag handle styles */
+.drag-handle {
+  cursor: move;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.note-item:hover .drag-handle {
+  opacity: 1;
+} 

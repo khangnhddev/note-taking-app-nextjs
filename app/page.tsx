@@ -1,15 +1,59 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { useState, useEffect, useMemo } from 'react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { supabase } from './lib/supabase';
 import Auth from './components/Auth';
 import Modal from './components/Modal';
-import NoteForm from './components/NoteForm';
+import dynamic from 'next/dynamic';
 import { Note } from './types/note';
-import CategoryManager from './components/CategoryManager';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { 
+  PlusIcon, 
+  ClockIcon,
+  TrashIcon,
+  PencilIcon as EditIcon,
+  ViewGridIcon as DragIcon,
+  MagnifyingGlassIcon,
+  ChartBarIcon
+} from '@heroicons/react/24/outline';
+import { useRouter } from 'next/navigation';
+import { ViewModeProvider, useViewMode } from './contexts/ViewModeContext';
+import ViewToggle from './components/ViewToggle';
+import NoteGrid from './components/NoteGrid';
+import SortOptions from './components/SortOptions';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import CreateNoteModal from './components/CreateNoteModal';
+import EditNoteModal from './components/EditNoteModal';
+import ProfileMenu from './components/ProfileMenu';
+
+// Dynamic imports
+const NoteForm = dynamic(() => import('./components/NoteForm'), {
+  ssr: false
+});
+
+const CategoryManager = dynamic(() => import('./components/CategoryManager'), {
+  ssr: false
+});
+
+const SearchAndFilter = dynamic(() => import('./components/SearchAndFilter'), {
+  ssr: false
+});
+
+const NotesStats = dynamic(() => import('./components/NotesStats'), {
+  ssr: false
+});
+
+type SortField = 'title' | 'created_at' | 'updated_at';
+type SortOrder = 'asc' | 'desc';
+
+interface Category {
+  id: string;
+  name: string;
+}
 
 export default function NotesPage() {
+  const { viewMode } = useViewMode();
   const [session, setSession] = useState<any>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -19,6 +63,22 @@ export default function NotesPage() {
   const [loading, setLoading] = useState(true);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [displayedNotes, setDisplayedNotes] = useState<Note[]>([]);
+  const [showStats, setShowStats] = useState(false);
+  const [sortedNotes, setSortedNotes] = useState<Note[]>([]);
+  const [sortConfig, setSortConfig] = useState<{
+    field: SortField;
+    order: SortOrder;
+  }>({
+    field: 'created_at',
+    order: 'desc'
+  });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const [timeFilter, setTimeFilter] = useState('All Time');
+  const supabase = createClientComponentClient();
+
+  const router = useRouter();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -37,6 +97,7 @@ export default function NotesPage() {
   useEffect(() => {
     if (session?.user?.id) {
       fetchNotes();
+      fetchCategories();
     }
   }, [session]);
 
@@ -48,8 +109,7 @@ export default function NotesPage() {
         .from('notes')
         .select('*')
         .eq('user_id', session.user.id)
-        .order('position')
-        .order('created_at', { ascending: false });
+        .order(sortConfig.field, { ascending: sortConfig.order === 'asc' });
 
       if (error) throw error;
 
@@ -59,6 +119,8 @@ export default function NotesPage() {
       }));
 
       setNotes(notesWithPositions);
+      setSortedNotes(notesWithPositions);
+      setDisplayedNotes(notesWithPositions);
     } catch (error) {
       console.error('Error fetching notes:', error);
     } finally {
@@ -66,119 +128,291 @@ export default function NotesPage() {
     }
   };
 
-  const handleDragEnd = async (result: any) => {
-    if (!result.destination || !session?.user?.id) return;
-
-    const { source, destination } = result;
-
-    if (
-      source.droppableId === destination.droppableId &&
-      source.index === destination.index
-    ) {
-      return;
-    }
-
+  const fetchCategories = async () => {
     try {
-      const newNotes = Array.from(notes);
-      const [movedNote] = newNotes.splice(source.index, 1);
-      newNotes.splice(destination.index, 0, movedNote);
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user?.id) return;
 
-      const updatedNotes = newNotes.map((note, index) => ({
-        ...note,
-        position: index,
-      }));
-      setNotes(updatedNotes);
-
-      const updates = updatedNotes.map((note) => ({
-        id: note.id,
-        position: note.position,
-        user_id: session.user.id,
-      }));
-
-      for (const update of updates) {
-        const { error } = await supabase
-          .from('notes')
-          .update({ position: update.position })
-          .eq('id', update.id)
-          .eq('user_id', update.user_id);
-
-        if (error) throw error;
-      }
-    } catch (error) {
-      console.error('Error updating note positions:', error);
-      setNotes(notes);
-      alert('Failed to update note positions. Please try again.');
-    }
-  };
-
-  const handleCreate = async (noteData: Partial<Note>) => {
-    try {
       const { data, error } = await supabase
-        .from('notes')
-        .insert([
-          {
-            ...noteData,
-            position: notes.length,
-            user_id: session?.user?.id,
-          },
-        ])
-        .select()
-        .single();
+        .from('categories')
+        .select('*')
+        .eq('user_id', session.session.user.id)
+        .order('name');
 
       if (error) throw error;
-      if (data) {
-        setNotes([...notes, data]);
-        setIsCreateModalOpen(false);
-      }
+      setCategories(data || []);
     } catch (error) {
-      console.error('Error creating note:', error);
+      console.error('Error fetching categories:', error);
     }
   };
 
-  const handleEdit = async (noteData: Partial<Note>) => {
-    if (!selectedNote) return;
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination) return;
 
-    try {
-      const { data, error } = await supabase
-        .from('notes')
-        .update(noteData)
-        .eq('id', selectedNote.id)
-        .select()
-        .single();
+    const items = Array.from(displayedNotes);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
 
-      if (error) throw error;
-      if (data) {
-        setNotes(notes.map((note) => (note.id === data.id ? data : note)));
-        setIsEditModalOpen(false);
-        setSelectedNote(null);
-      }
-    } catch (error) {
-      console.error('Error updating note:', error);
-    }
-  };
+    // Update local state immediately
+    setDisplayedNotes(items);
 
-  const handleDelete = async () => {
-    if (!selectedNote) return;
+    // Update sort orders
+    const updatedItems = items.map((item, index) => ({
+      ...item,
+      sort_order: index
+    }));
 
     try {
       const { error } = await supabase
         .from('notes')
-        .delete()
-        .eq('id', selectedNote.id);
+        .upsert(
+          updatedItems.map(({ id, sort_order }) => ({
+            id,
+            sort_order
+          }))
+        );
 
-      if (error) throw error;
-
-      setNotes(notes.filter((note) => note.id !== selectedNote.id));
-      setIsDeleteModalOpen(false);
-      setSelectedNote(null);
+      if (error) {
+        console.error('Error updating sort order:', error);
+        setDisplayedNotes(displayedNotes); // Revert on error
+      }
     } catch (error) {
-      console.error('Error deleting note:', error);
+      console.error('Error updating sort order:', error);
+      setDisplayedNotes(displayedNotes); // Revert on error
     }
   };
 
-  const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) console.error('Error signing out:', error);
+  const handleSubmitNote = async (noteData: Partial<Note>) => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user?.id) return;
+
+      if (selectedNote) {
+        // Update note
+        const { error } = await supabase
+          .from('notes')
+          .update({
+            title: noteData.title,
+            content: noteData.content,
+            category_id: noteData.category_id,
+            color: noteData.color,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', selectedNote.id);
+
+        if (error) throw error;
+
+        // Update note tags
+        if (noteData.tags) {
+          // Delete existing tags
+          await supabase
+            .from('note_tags')
+            .delete()
+            .eq('note_id', selectedNote.id);
+
+          // Insert new tags
+          if (noteData.tags.length > 0) {
+            await supabase
+              .from('note_tags')
+              .insert(
+                noteData.tags.map(tagId => ({
+                  note_id: selectedNote.id,
+                  tag_id: tagId
+                }))
+              );
+          }
+        }
+      } else {
+        // Create new note
+        const { data: note, error } = await supabase
+          .from('notes')
+          .insert([
+            {
+              title: noteData.title,
+              content: noteData.content,
+              category_id: noteData.category_id,
+              color: noteData.color,
+              user_id: session.session.user.id,
+            },
+          ])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Add tags if any
+        if (noteData.tags && noteData.tags.length > 0) {
+          await supabase
+            .from('note_tags')
+            .insert(
+              noteData.tags.map(tagId => ({
+                note_id: note.id,
+                tag_id: tagId
+              }))
+            );
+        }
+      }
+
+      // Refresh notes
+      fetchNotes();
+      setIsCreateModalOpen(false);
+      setSelectedNote(null);
+    } catch (error) {
+      console.error('Error saving note:', error);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  };
+
+  useKeyboardShortcuts({
+    onNewNote: () => setIsCreateModalOpen(true),
+    onSearch: () => document.querySelector<HTMLInputElement>('input[type="text"]')?.focus(),
+  });
+
+  const handleCategoryUpdate = async () => {
+    await fetchNotes();
+  };
+
+  const handleSort = (field: SortField) => {
+    const newOrder = field === sortConfig.field && sortConfig.order === 'asc' ? 'desc' : 'asc';
+    setSortConfig({ field, order: newOrder });
+
+    // Also sort the current notes without fetching
+    const sorted = [...notes].sort((a, b) => {
+      if (field === 'title') {
+        return newOrder === 'asc'
+          ? a.title.localeCompare(b.title)
+          : b.title.localeCompare(a.title);
+      }
+      const dateA = new Date(a[field]).getTime();
+      const dateB = new Date(b[field]).getTime();
+      return newOrder === 'asc' ? dateA - dateB : dateB - dateA;
+    });
+
+    setSortedNotes(sorted);
+  };
+
+  // Filter notes based on search query and other filters
+  const filteredAndSortedNotes = useMemo(() => {
+    return displayedNotes.filter(note => {
+      const matchesSearch = searchQuery.trim() === '' || 
+        note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        note.content.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesCategory = selectedCategory === 'All Categories' ||
+        note.category_id === selectedCategory;
+
+      // Add time filter logic here if needed
+      const matchesTime = true; // Implement time filtering based on your needs
+
+      return matchesSearch && matchesCategory && matchesTime;
+    });
+  }, [displayedNotes, searchQuery, selectedCategory, timeFilter]);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Add handler for creating note
+  const handleCreateNote = async (noteData: {
+    title: string;
+    content: string;
+    category_id?: string;
+  }) => {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error('User not authenticated');
+
+      // Log để debug
+      console.log('Creating note with data:', {
+        ...noteData,
+        user_id: user.id,
+      });
+
+      const { data, error } = await supabase
+        .from('notes')
+        .insert({
+          title: noteData.title,
+          content: noteData.content,
+          category_id: noteData.category_id || null,
+          user_id: user.id,
+        })
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Created note:', data);
+
+      // Update local state
+      setNotes(prevNotes => [data, ...prevNotes]);
+      
+      // Close modal
+      setIsCreateModalOpen(false);
+    } catch (error) {
+      console.error('Error creating note:', error);
+      alert('Failed to create note. Please check console for details.');
+    }
+  };
+
+  // Thêm handlers cho edit và delete
+  const handleEditNote = (note: Note) => {
+    setSelectedNote(note);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateNote = async (updatedNote: Note) => {
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .update({
+          title: updatedNote.title,
+          content: updatedNote.content,
+          category_id: updatedNote.category_id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', updatedNote.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setNotes(prev =>
+        prev.map(note => (note.id === updatedNote.id ? data : note))
+      );
+      
+      setIsEditModalOpen(false);
+      setSelectedNote(null);
+    } catch (error) {
+      console.error('Error updating note:', error);
+      alert('Failed to update note. Please try again.');
+    }
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    if (window.confirm('Are you sure you want to delete this note?')) {
+      try {
+        const { error } = await supabase
+          .from('notes')
+          .delete()
+          .eq('id', noteId);
+
+        if (error) throw error;
+
+        // Update local state
+        setDisplayedNotes(prev => prev.filter(note => note.id !== noteId));
+      } catch (error) {
+        console.error('Error deleting note:', error);
+        alert('Failed to delete note. Please try again.');
+      }
+    }
   };
 
   if (loading) {
@@ -201,150 +435,144 @@ export default function NotesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
-      <nav className="bg-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <h1 className="text-2xl font-bold text-gray-800">My Notes</h1>
-            <button
-              onClick={handleSignOut}
-              className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-end gap-4 mb-6">
-          <button
-            onClick={() => setIsCategoryModalOpen(true)}
-            className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200"
-          >
-            Manage Categories
-          </button>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
-            Create Note
-          </button>
-        </div>
-
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="notes">
-            {(provided) => (
-              <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-              >
-                {notes.map((note, index) => (
-                  <Draggable 
-                    key={note.id} 
-                    draggableId={note.id} 
-                    index={index}
-                  >
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        style={{
-                          ...provided.draggableProps.style,
-                          backgroundColor: note.color || '#ffffff',
-                        }}
-                        className={`rounded-xl shadow-lg p-6 transition-all duration-200 
-                          ${snapshot.isDragging ? 'shadow-2xl ring-2 ring-blue-500' : 'hover:shadow-xl'}`}
-                      >
-                        {/* Drag Handle */}
-                        <div
-                          {...provided.dragHandleProps}
-                          className="w-full h-6 flex items-center justify-center mb-2 cursor-grab active:cursor-grabbing"
-                        >
-                          <div className="w-8 h-1 bg-gray-300 rounded-full hover:bg-gray-400 transition-colors" />
-                        </div>
-
-                        {/* Note Content */}
-                        <div className="relative group">
-                          <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                            <button
-                              onClick={() => {
-                                setSelectedNote(note);
-                                setIsEditModalOpen(true);
-                              }}
-                              className="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedNote(note);
-                                setIsDeleteModalOpen(true);
-                              }}
-                              className="px-3 py-1 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </div>
-
-                          <div className="pt-8"> {/* Added padding-top to account for absolute buttons */}
-                            {note.category_id && (
-                              <span className="inline-block px-2 py-1 bg-white bg-opacity-50 text-gray-600 text-sm rounded-full mb-2">
-                                {categories.find(cat => cat.id === note.category_id)?.name || 'Uncategorized'}
-                              </span>
-                            )}
-                            <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                              {note.title}
-                            </h3>
-                            <p className="text-gray-600 mb-4 whitespace-pre-wrap">
-                              {note.content}
-                            </p>
-                            <div className="text-sm text-gray-400">
-                              {new Date(note.created_at).toLocaleString()}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
+    <ViewModeProvider>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <header className="bg-white shadow">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex justify-between items-center">
+              <h1 className="text-2xl font-bold text-gray-900">My Notes</h1>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => setShowStats(!showStats)}
+                  className="btn-secondary"
+                >
+                  <ChartBarIcon className="w-5 h-5 mr-2" />
+                  {showStats ? 'Hide Stats' : 'Show Stats'}
+                </button>
+                <button
+                  onClick={() => setIsCategoryModalOpen(true)}
+                  className="btn-secondary"
+                >
+                  Manage Categories
+                </button>
+                <button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="btn-primary"
+                >
+                  Create Note
+                </button>
+                <div className="ml-4 border-l pl-4">
+                  <ProfileMenu />
+                </div>
               </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Filters Bar */}
+          <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4 mb-6">
+            {/* Search */}
+            <div className="flex-1 relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search notes..."
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={searchQuery}
+                onChange={handleSearch}
+              />
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-wrap gap-4">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="select-input"
+              >
+                <option>All Categories</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={timeFilter}
+                onChange={(e) => setTimeFilter(e.target.value)}
+                className="select-input"
+              >
+                <option>All Time</option>
+                <option>Last 7 Days</option>
+                <option>Last 30 Days</option>
+                <option>This Year</option>
+              </select>
+
+              {/* Sort Buttons */}
+              <div className="flex rounded-lg shadow-sm bg-white">
+                <button
+                  onClick={() => handleSort('title')}
+                  className={`px-4 py-2 text-sm font-medium rounded-l-lg ${
+                    sortConfig.field === 'title'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  } border border-gray-300`}
+                >
+                  Title {sortConfig.field === 'title' && (sortConfig.order === 'asc' ? '↑' : '↓')}
+                </button>
+                <button
+                  onClick={() => handleSort('created_at')}
+                  className={`px-4 py-2 text-sm font-medium rounded-r-lg ${
+                    sortConfig.field === 'created_at'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  } border border-l-0 border-gray-300`}
+                >
+                  Date {sortConfig.field === 'created_at' && (sortConfig.order === 'asc' ? '↑' : '↓')}
+                </button>
+              </div>
+
+              <ViewToggle />
+            </div>
+          </div>
+
+          {/* Notes Grid with drag and drop */}
+          <NoteGrid 
+            notes={filteredAndSortedNotes} 
+            viewMode={viewMode}
+            onNoteClick={(note) => console.log('clicked note:', note)}
+            onDragEnd={handleDragEnd}
+            onEdit={handleEditNote}
+            onDelete={handleDeleteNote}
+          />
+        </main>
 
         {/* Create Modal */}
-        <Modal
-          isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
-          title="Create Note"
-        >
-          <NoteForm
-            onSubmit={handleCreate}
+        {isCreateModalOpen && (
+          <CreateNoteModal
+            isOpen={true}
             onClose={() => setIsCreateModalOpen(false)}
+            onSubmit={handleCreateNote}
+            categories={categories}
           />
-        </Modal>
+        )}
 
-        {/* Edit Modal */}
-        <Modal
-          isOpen={isEditModalOpen}
-          onClose={() => {
-            setIsEditModalOpen(false);
-            setSelectedNote(null);
-          }}
-          title="Edit Note"
-        >
-          <NoteForm
-            initialData={selectedNote!}
-            onSubmit={handleEdit}
+        {isEditModalOpen && (
+          <EditNoteModal
+            isOpen={true}
             onClose={() => {
               setIsEditModalOpen(false);
               setSelectedNote(null);
             }}
+            onSubmit={handleUpdateNote}
+            note={selectedNote}
+            categories={categories}
           />
-        </Modal>
+        )}
 
         {/* Delete Confirmation Modal */}
         <Modal
@@ -359,7 +587,10 @@ export default function NotesPage() {
             <p>Are you sure you want to delete this note?</p>
             <div className="flex gap-2">
               <button
-                onClick={handleDelete}
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setSelectedNote(null);
+                }}
                 className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
               >
                 Delete
@@ -385,10 +616,10 @@ export default function NotesPage() {
         >
           <CategoryManager
             onClose={() => setIsCategoryModalOpen(false)}
-            onUpdate={fetchNotes}
+            onUpdate={handleCategoryUpdate}
           />
         </Modal>
-      </main>
-    </div>
+      </div>
+    </ViewModeProvider>
   );
 } 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Category } from '../types/note';
+import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface CategoryManagerProps {
   onClose: () => void;
@@ -11,7 +12,11 @@ interface CategoryManagerProps {
 
 export default function CategoryManager({ onClose, onUpdate }: CategoryManagerProps) {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategory, setNewCategory] = useState({
+    name: '',
+    color: '#3B82F6',
+    description: ''
+  });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -21,12 +26,20 @@ export default function CategoryManager({ onClose, onUpdate }: CategoryManagerPr
 
   const fetchCategories = async () => {
     try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user?.id) {
+        console.log('No user session found');
+        return;
+      }
+
       const { data, error } = await supabase
         .from('categories')
         .select('*')
+        .eq('user_id', session.session.user.id)
         .order('name');
 
       if (error) throw error;
+      console.log('Fetched categories:', data);
       setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -35,24 +48,35 @@ export default function CategoryManager({ onClose, onUpdate }: CategoryManagerPr
     }
   };
 
-  const handleAddCategory = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCategoryName.trim()) return;
-
     try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user?.id) {
+        console.log('No user session found');
+        return;
+      }
+
       const { data, error } = await supabase
         .from('categories')
-        .insert([{ name: newCategoryName.trim() }])
-        .select()
-        .single();
+        .insert([
+          {
+            name: newCategory.name,
+            color: newCategory.color,
+            description: newCategory.description,
+            user_id: session.session.user.id
+          }
+        ])
+        .select();
 
       if (error) throw error;
 
-      setCategories([...categories, data]);
-      setNewCategoryName('');
+      console.log('Created category:', data);
+      setNewCategory({ name: '', color: '#3B82F6', description: '' });
+      fetchCategories();
       onUpdate();
     } catch (error) {
-      console.error('Error adding category:', error);
+      console.error('Error creating category:', error);
     }
   };
 
@@ -100,12 +124,12 @@ export default function CategoryManager({ onClose, onUpdate }: CategoryManagerPr
   return (
     <div className="space-y-6">
       {/* Add New Category Form */}
-      <form onSubmit={handleAddCategory} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex gap-2">
           <input
             type="text"
-            value={newCategoryName}
-            onChange={(e) => setNewCategoryName(e.target.value)}
+            value={newCategory.name}
+            onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
             placeholder="New category name"
             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           />
