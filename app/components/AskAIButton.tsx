@@ -4,43 +4,44 @@ import { useState } from 'react';
 import { SparklesIcon } from '@heroicons/react/24/outline';
 
 interface AskAIButtonProps {
-  onAIResponse: (response: string) => void;
-  prompt?: string;
+  onAIResponse: (content: string) => void;
+  prompt: string;
 }
 
-export default function AskAIButton({ onAIResponse, prompt = '' }: AskAIButtonProps) {
-  const [loading, setLoading] = useState(false);
+export default function AskAIButton({ onAIResponse, prompt }: AskAIButtonProps) {
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleAskAI = async () => {
-    setLoading(true);
+    setIsLoading(true);
     try {
-      const response = await fetch('/api/ask-ai', {
+      const response = await fetch('/api/ai/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt: prompt || 'Help me write a note' }),
+        body: JSON.stringify({ prompt }),
       });
 
-      if (!response.ok) throw new Error('AI request failed');
+      if (!response.ok) throw new Error('Failed to generate content');
 
       const data = await response.json();
       onAIResponse(data.content);
     } catch (error) {
       console.error('Error asking AI:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
     <button
+      type="button"
       onClick={handleAskAI}
-      disabled={loading}
-      className="flex items-center space-x-1 px-3 py-1 text-sm text-blue-600 hover:text-blue-700 disabled:opacity-50"
+      disabled={isLoading}
+      className="flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-700"
     >
-      <SparklesIcon className={`w-4 h-4 ${loading ? 'animate-pulse' : ''}`} />
-      <span>{loading ? 'Thinking...' : 'Ask AI'}</span>
+      <SparklesIcon className="w-4 h-4" />
+      <span>{isLoading ? 'Generating...' : 'Ask AI'}</span>
     </button>
   );
 } 

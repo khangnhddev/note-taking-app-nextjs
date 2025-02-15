@@ -23,14 +23,13 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./*"]
     },
     "types": [
       "jest",
       "node"
-    ]
+    ],
+    "baseUrl": "."
   },
   "include": [
     "next-env.d.ts",

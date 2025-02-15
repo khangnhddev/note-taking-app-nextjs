@@ -19,9 +19,22 @@ interface NoteFormProps {
   initialData?: Note;
   onClose: () => void;
   onOpenCategoryManager: () => void;
+  categories: { id: string; name: string }[];
+  submitLabel: string;
+  isLoading: boolean;
+  error: string | null;
 }
 
-export default function NoteForm({ onSubmit, initialData, onClose, onOpenCategoryManager }: NoteFormProps) {
+export default function NoteForm({
+  onSubmit,
+  initialData,
+  onClose,
+  onOpenCategoryManager,
+  categories,
+  submitLabel,
+  isLoading,
+  error,
+}: NoteFormProps) {
   const [title, setTitle] = useState(initialData?.title || '');
   const [content, setContent] = useState(initialData?.content || '');
   const [categoryId, setCategoryId] = useState(initialData?.category_id || '');
@@ -30,7 +43,6 @@ export default function NoteForm({ onSubmit, initialData, onClose, onOpenCategor
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showTags, setShowTags] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -54,6 +66,25 @@ export default function NoteForm({ onSubmit, initialData, onClose, onOpenCategor
       console.error('Error fetching categories:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAskAI = async () => {
+    try {
+      const response = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt: title }),
+      });
+
+      if (!response.ok) throw new Error('Failed to generate content');
+
+      const data = await response.json();
+      setContent(data.content);
+    } catch (error) {
+      console.error('Error asking AI:', error);
     }
   };
 
@@ -251,7 +282,7 @@ export default function NoteForm({ onSubmit, initialData, onClose, onOpenCategor
                    text-white font-medium rounded-lg shadow-sm hover:shadow
                    transform hover:-translate-y-0.5 transition-all duration-200"
         >
-          {initialData ? 'Update Note' : 'Create Note'}
+          {isLoading ? 'Saving...' : submitLabel}
         </button>
         <button
           type="button"

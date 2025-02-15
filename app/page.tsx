@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { supabase } from './lib/supabase';
 import Auth from './components/Auth';
 import Modal from './components/Modal';
 import dynamic from 'next/dynamic';
@@ -22,10 +21,11 @@ import { ViewModeProvider, useViewMode } from './contexts/ViewModeContext';
 import ViewToggle from './components/ViewToggle';
 import NoteGrid from './components/NoteGrid';
 import SortOptions from './components/SortOptions';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import CreateNoteModal from './components/CreateNoteModal';
 import EditNoteModal from './components/EditNoteModal';
 import ProfileMenu from './components/ProfileMenu';
+import { useSession } from "next-auth/react";
+import SearchBar from './components/SearchBar';
 
 // Dynamic imports
 const NoteForm = dynamic(() => import('./components/NoteForm'), {
@@ -54,7 +54,7 @@ interface Category {
 
 export default function NotesPage() {
   const { viewMode } = useViewMode();
-  const [session, setSession] = useState<any>(null);
+  const { data: session, status } = useSession();
   const [notes, setNotes] = useState<Note[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -76,51 +76,25 @@ export default function NotesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [timeFilter, setTimeFilter] = useState('All Time');
-  const supabase = createClientComponentClient();
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const router = useRouter();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
 
   useEffect(() => {
-    if (session?.user?.id) {
-      fetchNotes();
-      fetchCategories();
-    }
-  }, [session]);
+    fetchNotes();
+  }, []);
 
   const fetchNotes = async () => {
     try {
-      if (!session?.user?.id) return;
-
-      const { data, error } = await supabase
-        .from('notes')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order(sortConfig.field, { ascending: sortConfig.order === 'asc' });
-
-      if (error) throw error;
-
-      const notesWithPositions = (data || []).map((note, index) => ({
-        ...note,
-        position: index,
-      }));
-
-      setNotes(notesWithPositions);
-      setSortedNotes(notesWithPositions);
-      setDisplayedNotes(notesWithPositions);
+      const response = await fetch('/api/notes');
+      const data = await response.json();
+      setNotes(data);
     } catch (error) {
       console.error('Error fetching notes:', error);
     } finally {
@@ -130,14 +104,11 @@ export default function NotesPage() {
 
   const fetchCategories = async () => {
     try {
-      const { data: session } = await supabase.auth.getSession();
+      const { data: session } = await fetch('/api/session');
       if (!session?.session?.user?.id) return;
 
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('user_id', session.session.user.id)
-        .order('name');
+      const { data, error } = await fetch('/api/categories')
+        .then(res => res.json());
 
       if (error) throw error;
       setCategories(data || []);
@@ -163,17 +134,19 @@ export default function NotesPage() {
     }));
 
     try {
-      const { error } = await supabase
-        .from('notes')
-        .upsert(
-          updatedItems.map(({ id, sort_order }) => ({
-            id,
-            sort_order
-          }))
-        );
+      const response = await fetch('/api/notes', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedItems.map(({ id, sort_order }) => ({
+          id,
+          sort_order
+        }))),
+      });
 
-      if (error) {
-        console.error('Error updating sort order:', error);
+      if (!response.ok) {
+        console.error('Error updating sort order:', response.statusText);
         setDisplayedNotes(displayedNotes); // Revert on error
       }
     } catch (error) {
@@ -184,86 +157,30 @@ export default function NotesPage() {
 
   const handleSubmitNote = async (noteData: Partial<Note>) => {
     try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user?.id) return;
+      const response = await fetch('/api/notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(noteData),
+      });
 
-      if (selectedNote) {
-        // Update note
-        const { error } = await supabase
-          .from('notes')
-          .update({
-            title: noteData.title,
-            content: noteData.content,
-            category_id: noteData.category_id,
-            color: noteData.color,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', selectedNote.id);
-
-        if (error) throw error;
-
-        // Update note tags
-        if (noteData.tags) {
-          // Delete existing tags
-          await supabase
-            .from('note_tags')
-            .delete()
-            .eq('note_id', selectedNote.id);
-
-          // Insert new tags
-          if (noteData.tags.length > 0) {
-            await supabase
-              .from('note_tags')
-              .insert(
-                noteData.tags.map(tagId => ({
-                  note_id: selectedNote.id,
-                  tag_id: tagId
-                }))
-              );
-          }
-        }
-      } else {
-        // Create new note
-        const { data: note, error } = await supabase
-          .from('notes')
-          .insert([
-            {
-              title: noteData.title,
-              content: noteData.content,
-              category_id: noteData.category_id,
-              color: noteData.color,
-              user_id: session.session.user.id,
-            },
-          ])
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        // Add tags if any
-        if (noteData.tags && noteData.tags.length > 0) {
-          await supabase
-            .from('note_tags')
-            .insert(
-              noteData.tags.map(tagId => ({
-                note_id: note.id,
-                tag_id: tagId
-              }))
-            );
-        }
+      if (!response.ok) {
+        throw new Error('Failed to save note');
       }
 
-      // Refresh notes
-      fetchNotes();
+      const newNote = await response.json();
+      setNotes(prevNotes => [newNote, ...prevNotes]);
       setIsCreateModalOpen(false);
       setSelectedNote(null);
+      setRefreshKey(prev => prev + 1);
     } catch (error) {
       console.error('Error saving note:', error);
     }
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await fetch('/api/logout');
     router.push('/login');
     router.refresh();
   };
@@ -313,56 +230,38 @@ export default function NotesPage() {
     });
   }, [displayedNotes, searchQuery, selectedCategory, timeFilter]);
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
   };
 
-  // Add handler for creating note
   const handleCreateNote = async (noteData: {
     title: string;
     content: string;
     category_id?: string;
   }) => {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) throw new Error('User not authenticated');
-
-      // Log để debug
-      console.log('Creating note with data:', {
-        ...noteData,
-        user_id: user.id,
+      const response = await fetch('/api/notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(noteData),
       });
 
-      const { data, error } = await supabase
-        .from('notes')
-        .insert({
-          title: noteData.title,
-          content: noteData.content,
-          category_id: noteData.category_id || null,
-          user_id: user.id,
-        })
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
+      if (!response.ok) {
+        throw new Error('Failed to create note');
       }
 
-      console.log('Created note:', data);
-
-      // Update local state
-      setNotes(prevNotes => [data, ...prevNotes]);
-      
-      // Close modal
+      const newNote = await response.json();
+      setNotes(prevNotes => [newNote, ...prevNotes]);
       setIsCreateModalOpen(false);
+      setRefreshKey(prev => prev + 1);
     } catch (error) {
       console.error('Error creating note:', error);
-      alert('Failed to create note. Please check console for details.');
+      throw error;
     }
   };
 
-  // Thêm handlers cho edit và delete
   const handleEditNote = (note: Note) => {
     setSelectedNote(note);
     setIsEditModalOpen(true);
@@ -370,44 +269,44 @@ export default function NotesPage() {
 
   const handleUpdateNote = async (updatedNote: Note) => {
     try {
-      const { data, error } = await supabase
-        .from('notes')
-        .update({
-          title: updatedNote.title,
-          content: updatedNote.content,
-          category_id: updatedNote.category_id,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', updatedNote.id)
-        .select()
-        .single();
+      const response = await fetch(`/api/notes/${updatedNote.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedNote),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to update note');
+      }
 
-      setNotes(prev =>
-        prev.map(note => (note.id === updatedNote.id ? data : note))
+      const updated = await response.json();
+      setNotes(prevNotes =>
+        prevNotes.map(note => (note.id === updated.id ? updated : note))
       );
-      
       setIsEditModalOpen(false);
       setSelectedNote(null);
+      setRefreshKey(prev => prev + 1);
     } catch (error) {
       console.error('Error updating note:', error);
-      alert('Failed to update note. Please try again.');
+      throw error;
     }
   };
 
   const handleDeleteNote = async (noteId: string) => {
     if (window.confirm('Are you sure you want to delete this note?')) {
       try {
-        const { error } = await supabase
-          .from('notes')
-          .delete()
-          .eq('id', noteId);
+        const response = await fetch(`/api/notes/${noteId}`, {
+          method: 'DELETE',
+        });
 
-        if (error) throw error;
+        if (!response.ok) {
+          throw new Error('Failed to delete note');
+        }
 
-        // Update local state
-        setDisplayedNotes(prev => prev.filter(note => note.id !== noteId));
+        setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
+        setRefreshKey(prev => prev + 1);
       } catch (error) {
         console.error('Error deleting note:', error);
         alert('Failed to delete note. Please try again.');
@@ -415,24 +314,21 @@ export default function NotesPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-      </div>
-    );
+  const handleRefresh = useCallback(() => {
+    setRefreshKey(prev => prev + 1);
+  }, []);
+
+  if (status === "loading") {
+    return <div>Loading...</div>;
   }
 
   if (!session) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Please log in</h2>
-          <p className="text-gray-600">You need to be logged in to view your notes.</p>
-        </div>
-      </div>
-    );
+    return <div>Please log in to view your notes.</div>;
   }
+
+  const handleNoteCreated = () => {
+    setRefreshKey(prev => prev + 1);
+  };
 
   return (
     <ViewModeProvider>
@@ -476,14 +372,7 @@ export default function NotesPage() {
           <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4 mb-6">
             {/* Search */}
             <div className="flex-1 relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search notes..."
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={searchQuery}
-                onChange={handleSearch}
-              />
+              <SearchBar onSearch={handleSearch} />
             </div>
 
             {/* Filters */}
@@ -542,12 +431,15 @@ export default function NotesPage() {
 
           {/* Notes Grid with drag and drop */}
           <NoteGrid 
+            key={refreshKey}
             notes={filteredAndSortedNotes} 
             viewMode={viewMode}
             onNoteClick={(note) => console.log('clicked note:', note)}
             onDragEnd={handleDragEnd}
             onEdit={handleEditNote}
             onDelete={handleDeleteNote}
+            onRefresh={handleRefresh}
+            searchQuery={searchQuery}
           />
         </main>
 
@@ -555,8 +447,12 @@ export default function NotesPage() {
         {isCreateModalOpen && (
           <CreateNoteModal
             isOpen={true}
-            onClose={() => setIsCreateModalOpen(false)}
+            onClose={() => {
+              setIsCreateModalOpen(false);
+              handleRefresh();
+            }}
             onSubmit={handleCreateNote}
+            onNoteCreated={handleNoteCreated}
             categories={categories}
           />
         )}
