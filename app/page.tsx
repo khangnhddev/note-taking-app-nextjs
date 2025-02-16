@@ -263,9 +263,10 @@ export default function NotesPage() {
     }
   };
 
-  const handleEditNote = (note: Note) => {
+  const handleEditNote = async (note: Note) => {
     setSelectedNote(note);
     setIsEditModalOpen(true);
+    return Promise.resolve();
   };
 
   const handleUpdateNote = async (updatedNote: Note) => {
@@ -435,6 +436,7 @@ export default function NotesPage() {
             key={refreshKey}
             notes={filteredAndSortedNotes} 
             viewMode={viewMode}
+            categories={categories}
             onNoteClick={(note) => console.log('clicked note:', note)}
             onDragEnd={handleDragEnd}
             onEdit={handleEditNote}
