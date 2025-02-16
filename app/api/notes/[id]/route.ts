@@ -62,4 +62,3 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     return new Response('Error deleting note', { status: 500 });
   }
 } 
-} 
