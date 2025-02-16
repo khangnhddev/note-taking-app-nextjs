@@ -458,7 +458,7 @@ export default function NotesPage() {
           />
         )}
 
-        {isEditModalOpen && (
+        {selectedNote && (
           <EditNoteModal
             isOpen={true}
             onClose={() => {

@@ -3,26 +3,22 @@
 import React, { useEffect, useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import EditNoteModal from './EditNoteModal';
-
-interface Note {
-  id: string;
-  title: string;
-  content: string;
-  categoryId: string | null;
-  createdAt: string;
-  category?: {
-    id: string;
-    name: string;
-  } | null;
-}
+import { Note } from '@/app/types/note';
+import { ViewMode } from '@/app/contexts/ViewModeContext';
+import { DropResult } from '@hello-pangea/dnd';
 
 interface NoteGridProps {
-  onRefresh?: () => void;
-  searchQuery?: string;
+  notes: Note[];
+  viewMode: ViewMode;
+  onNoteClick: (note: Note) => void;
+  onDragEnd: (result: DropResult) => Promise<void>;
+  onEdit: (note: Note) => void;
+  onDelete: (noteId: string) => Promise<void>;
+  onRefresh: () => void;
+  searchQuery: string;
 }
 
-const NoteGrid: React.FC<NoteGridProps> = ({ onRefresh, searchQuery = '' }) => {
-  const [notes, setNotes] = useState<Note[]>([]);
+const NoteGrid = ({ notes, viewMode, ...props }: NoteGridProps) => {
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,19 +41,19 @@ const NoteGrid: React.FC<NoteGridProps> = ({ onRefresh, searchQuery = '' }) => {
   };
 
   useEffect(() => {
-    if (!searchQuery.trim()) {
+    if (!props.searchQuery.trim()) {
       setFilteredNotes(notes);
       return;
     }
 
-    const query = searchQuery.toLowerCase();
+    const query = props.searchQuery.toLowerCase();
     const filtered = notes.filter(note => 
       note.title.toLowerCase().includes(query) || 
       note.content.toLowerCase().includes(query) ||
       note.category?.name.toLowerCase().includes(query)
     );
     setFilteredNotes(filtered);
-  }, [searchQuery, notes]);
+  }, [props.searchQuery, notes]);
 
   const handleDelete = async (noteId: string) => {
     if (!confirm('Are you sure you want to delete this note?')) return;
@@ -70,7 +66,7 @@ const NoteGrid: React.FC<NoteGridProps> = ({ onRefresh, searchQuery = '' }) => {
       if (!response.ok) throw new Error('Failed to delete note');
       
       await fetchNotes();
-      if (onRefresh) onRefresh();
+      if (props.onRefresh) props.onRefresh();
     } catch (error) {
       console.error('Error deleting note:', error);
     }
@@ -177,7 +173,7 @@ const NoteGrid: React.FC<NoteGridProps> = ({ onRefresh, searchQuery = '' }) => {
           onClose={() => {
             setEditingNote(null);
             fetchNotes();
-            if (onRefresh) onRefresh();
+            if (props.onRefresh) props.onRefresh();
           }}
           categories={[]}
         />
@@ -186,4 +182,5 @@ const NoteGrid: React.FC<NoteGridProps> = ({ onRefresh, searchQuery = '' }) => {
   );
 };
 
+export type NoteGridProps = NoteGridProps;
 export default NoteGrid; 

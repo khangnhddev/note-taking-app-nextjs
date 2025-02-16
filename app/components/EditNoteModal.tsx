@@ -7,18 +7,15 @@ import Modal from './Modal';
 interface EditNoteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  note: {
-    id: string;
-    title: string;
-    content: string;
-    categoryId: string | null;
-  };
+  onSubmit: (note: Note) => Promise<void>;
+  note: Note;
   categories: Array<{ id: string; name: string }>;
 }
 
 export default function EditNoteModal({
   isOpen,
   onClose,
+  onSubmit,
   note,
   categories
 }: EditNoteModalProps) {

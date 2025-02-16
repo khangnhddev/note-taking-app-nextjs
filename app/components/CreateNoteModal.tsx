@@ -7,12 +7,16 @@ import Modal from './Modal';
 interface CreateNoteModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSubmit: (noteData: { title: string; content: string; category_id?: string }) => Promise<void>;
+  onNoteCreated: () => void;
   categories: Array<{ id: string; name: string }>;
 }
 
 export default function CreateNoteModal({
   isOpen,
   onClose,
+  onSubmit,
+  onNoteCreated,
   categories
 }: CreateNoteModalProps) {
   const [title, setTitle] = useState('');
@@ -48,6 +52,7 @@ export default function CreateNoteModal({
       setContent('');
       setCategoryId('');
       onClose();
+      onNoteCreated();
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Something went wrong');
     } finally {
