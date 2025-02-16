@@ -1,33 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { signIn } from 'next-auth/react';
 
 export default function Auth() {
-  const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const result = await supabase.auth.signInWithPassword({
+      const result = await signIn('credentials', {
         email,
         password,
-        redirect: false,
-        callbackUrl: '/'
       });
 
       if (result?.error) {
         alert(result.error);
-        return;
       }
-
-      // Redirect sau khi đăng nhập thành công
-      window.location.href = '/';
       
     } catch (error) {
       if (error instanceof Error) {
@@ -47,16 +40,16 @@ export default function Auth() {
       <div className="login-container bg-white/95 p-8 rounded-2xl shadow-2xl w-[90%] max-w-[400px]">
         <div className="login-header text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            {isSignUp ? 'Create Account' : 'Welcome Back'}
+            Welcome Back
           </h1>
           <p className="text-gray-600">
-            {isSignUp ? 'Sign up to get started' : 'Please login to continue'}
+            Please login to continue
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="form-group">
-            <label htmlFor="email" className="block mb-2 text-gray-600 font-medium">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               Email
             </label>
             <input
@@ -64,14 +57,13 @@ export default function Auth() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
               required
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-gray-600 transition-colors text-base"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password" className="block mb-2 text-gray-600 font-medium">
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Password
             </label>
             <input
@@ -79,34 +71,26 @@ export default function Auth() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
               required
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-gray-600 transition-colors text-base"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-colors disabled:opacity-50"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
-            {loading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Login'}
+            {loading ? 'Loading...' : 'Sign In'}
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <button
-            onClick={() => setIsSignUp(!isSignUp)}
             className="text-gray-600 hover:underline text-sm"
           >
-            {isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign up"}
-          </button>
-        </div>
-
-        <div className="forgot-password text-center mt-4">
-          <a href="#" className="text-gray-600 hover:underline text-sm">
             Forgot Password?
-          </a>
+          </button>
         </div>
       </div>
     </div>
