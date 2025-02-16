@@ -65,6 +65,7 @@ model Note {
   id         String    @id @default(cuid())
   title      String
   content    String
+  order      Int?
   userId     String
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   categoryId String?

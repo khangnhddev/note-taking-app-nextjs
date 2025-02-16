@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import EditNoteModal from './EditNoteModal';
 
 interface Note {
@@ -9,6 +9,7 @@ interface Note {
   title: string;
   content: string;
   categoryId: string | null;
+  createdAt: string;
   category?: {
     id: string;
     name: string;
@@ -26,7 +27,6 @@ const NoteGrid: React.FC<NoteGridProps> = ({ onRefresh, searchQuery = '' }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
-  const router = useRouter();
 
   const fetchNotes = async () => {
     try {
@@ -44,7 +44,6 @@ const NoteGrid: React.FC<NoteGridProps> = ({ onRefresh, searchQuery = '' }) => {
     }
   };
 
-  // Filter notes when search query changes
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredNotes(notes);
@@ -77,6 +76,17 @@ const NoteGrid: React.FC<NoteGridProps> = ({ onRefresh, searchQuery = '' }) => {
     }
   };
 
+  const handleDragEnd = (result: any) => {
+    if (!result.destination) return;
+
+    const items = Array.from(filteredNotes);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setFilteredNotes(items);
+    // Có thể thêm API call để lưu thứ tự mới vào database
+  };
+
   useEffect(() => {
     fetchNotes();
   }, []);
@@ -88,33 +98,77 @@ const NoteGrid: React.FC<NoteGridProps> = ({ onRefresh, searchQuery = '' }) => {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredNotes.map((note) => (
-          <div key={note.id} className="p-4 border rounded-lg shadow-sm relative group">
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={() => setEditingNote(note)}
-                className="text-blue-600 hover:text-blue-800 mr-2"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDelete(note.id)}
-                className="text-red-600 hover:text-red-800"
-              >
-                Delete
-              </button>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="notes" direction="horizontal">
+          {(provided) => (
+            <div
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+              className="flex flex-wrap gap-4"
+            >
+              {filteredNotes.map((note, index) => (
+                <Draggable key={note.id} draggableId={note.id} index={index}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      style={{
+                        ...provided.draggableProps.style,
+                        width: 'calc(33.333% - 1rem)',
+                        minWidth: '300px',
+                      }}
+                      className={`
+                        p-4 border rounded-lg
+                        ${snapshot.isDragging ? 'shadow-lg' : 'shadow-sm'}
+                        relative group hover:shadow-md
+                        transition-shadow
+                        bg-white
+                      `}
+                    >
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => setEditingNote(note)}
+                          className="text-blue-600 hover:text-blue-800 mr-2"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(note.id)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          Delete
+                        </button>
+                      </div>
+
+                      <h3 className="font-semibold text-lg mb-2">{note.title}</h3>
+                      <p className="text-gray-600 mb-4">{note.content}</p>
+                      
+                      <div className="flex justify-between items-center mt-auto">
+                        {note.category && (
+                          <span className="inline-block px-2 py-1 text-sm bg-gray-100 rounded">
+                            {note.category.name}
+                          </span>
+                        )}
+                        <span className="text-sm text-gray-500">
+                          {new Date(note.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
             </div>
-            <h3 className="font-semibold text-lg">{note.title}</h3>
-            <p className="text-gray-600 mt-2">{note.content}</p>
-            {note.category && (
-              <span className="inline-block mt-2 px-2 py-1 text-sm bg-gray-100 rounded">
-                {note.category.name}
-              </span>
-            )}
-          </div>
-        ))}
-      </div>
+          )}
+        </Droppable>
+      </DragDropContext>
 
       {editingNote && (
         <EditNoteModal
@@ -125,7 +179,7 @@ const NoteGrid: React.FC<NoteGridProps> = ({ onRefresh, searchQuery = '' }) => {
             fetchNotes();
             if (onRefresh) onRefresh();
           }}
-          categories={[]} // Pass your categories here
+          categories={[]}
         />
       )}
     </>
