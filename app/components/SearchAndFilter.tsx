@@ -16,6 +16,7 @@ export default function SearchAndFilter({ notes, categories, onFilteredNotesChan
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [timeFilter, setTimeFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState('latest');
+  const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
 
   useEffect(() => {
     let filtered = [...notes];
@@ -59,8 +60,14 @@ export default function SearchAndFilter({ notes, categories, onFilteredNotesChan
       return sortOrder === 'latest' ? dateB - dateA : dateA - dateB;
     });
 
-    onFilteredNotesChange(filtered);
+    setFilteredNotes(filtered);
   }, [notes, searchTerm, selectedCategory, timeFilter, sortOrder]);
+
+  useEffect(() => {
+    if (onFilteredNotesChange) {
+      onFilteredNotesChange(filteredNotes);
+    }
+  }, [filteredNotes, onFilteredNotesChange]);
 
   return (
     <div className="flex flex-col sm:flex-row gap-4">
