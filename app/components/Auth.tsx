@@ -9,33 +9,37 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
 
-  const handleAuth = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-        if (error) throw error;
-        alert('Check your email for the confirmation link!');
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
+      const result = await supabase.auth.signInWithPassword({
+        email,
+        password,
+        redirectTo: '/',
+      });
+
+      if (result?.error) {
+        alert(result.error);
+        return;
       }
+
+      // Redirect or handle success
+      window.location.href = '/';
+      
     } catch (error) {
-      alert(error.message);
+      if (error instanceof Error) {
+        alert(error.message);
+      } else {
+        alert('An error occurred');
+      }
     } finally {
       setLoading(false);
       setEmail('');
       setPassword('');
     }
-  };
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-gray-700 to-gray-600">
@@ -49,7 +53,7 @@ export default function Auth() {
           </p>
         </div>
 
-        <form onSubmit={handleAuth} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="form-group">
             <label htmlFor="email" className="block mb-2 text-gray-600 font-medium">
               Email
