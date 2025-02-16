@@ -89,7 +89,11 @@ export default function CreateNoteModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose}
+      title="Create New Note"
+    >
       <div className="bg-white rounded-lg overflow-hidden w-full max-w-2xl">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-2xl font-semibold text-gray-800">Create New Note</h2>
