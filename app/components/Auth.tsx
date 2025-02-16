@@ -28,7 +28,7 @@ export default function Auth() {
         });
         if (error) throw error;
       }
-    } catch (error) {
+    } catch (error: any) {
       alert(error.message);
     } finally {
       setLoading(false);
