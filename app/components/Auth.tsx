@@ -17,7 +17,8 @@ export default function Auth() {
       const result = await supabase.auth.signInWithPassword({
         email,
         password,
-        redirectTo: '/',
+        redirect: false,
+        callbackUrl: '/'
       });
 
       if (result?.error) {
@@ -25,7 +26,7 @@ export default function Auth() {
         return;
       }
 
-      // Redirect or handle success
+      // Redirect sau khi đăng nhập thành công
       window.location.href = '/';
       
     } catch (error) {
