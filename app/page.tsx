@@ -12,7 +12,7 @@ import {
   ClockIcon,
   TrashIcon,
   PencilIcon as EditIcon,
-  ViewGridIcon as DragIcon,
+  Squares2X2Icon as DragIcon,
   MagnifyingGlassIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline';
@@ -104,8 +104,9 @@ export default function NotesPage() {
 
   const fetchCategories = async () => {
     try {
-      const { data: session } = await fetch('/api/session');
-      if (!session?.session?.user?.id) return;
+      const response = await fetch('/api/session');
+      const { session } = await response.json();
+      if (!session?.user?.id) return;
 
       const { data, error } = await fetch('/api/categories')
         .then(res => res.json());
