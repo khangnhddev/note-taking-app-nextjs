@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import Modal from './Modal';
+import { Note } from '@/app/types/note';
 
 interface EditNoteModalProps {
   isOpen: boolean;
@@ -21,7 +22,7 @@ export default function EditNoteModal({
 }: EditNoteModalProps) {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
-  const [categoryId, setCategoryId] = useState(note.categoryId || '');
+  const [categoryId, setCategoryId] = useState(note.category_id || '');
   const [isLoading, setIsLoading] = useState(false);
   const [isAskingAI, setIsAskingAI] = useState(false);
   const [error, setError] = useState<string | null>(null);

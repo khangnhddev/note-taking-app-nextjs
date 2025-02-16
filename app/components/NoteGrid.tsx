@@ -7,15 +7,16 @@ import { Note } from '@/app/types/note';
 import { ViewMode } from '@/app/contexts/ViewModeContext';
 import { DropResult } from '@hello-pangea/dnd';
 
-interface NoteGridProps {
+export interface NoteGridProps {
   notes: Note[];
   viewMode: ViewMode;
   onNoteClick: (note: Note) => void;
   onDragEnd: (result: DropResult) => Promise<void>;
-  onEdit: (note: Note) => void;
+  onEdit: (note: Note) => Promise<void>;
   onDelete: (noteId: string) => Promise<void>;
   onRefresh: () => void;
   searchQuery: string;
+  categories: { id: string; name: string }[];
 }
 
 const NoteGrid = ({ notes, viewMode, ...props }: NoteGridProps) => {
@@ -30,7 +31,6 @@ const NoteGrid = ({ notes, viewMode, ...props }: NoteGridProps) => {
       const response = await fetch('/api/notes');
       if (!response.ok) throw new Error('Failed to fetch notes');
       const data = await response.json();
-      setNotes(data);
       setFilteredNotes(data);
     } catch (error) {
       console.error('Error fetching notes:', error);
@@ -50,10 +50,10 @@ const NoteGrid = ({ notes, viewMode, ...props }: NoteGridProps) => {
     const filtered = notes.filter(note => 
       note.title.toLowerCase().includes(query) || 
       note.content.toLowerCase().includes(query) ||
-      note.category?.name.toLowerCase().includes(query)
+      (note.category_id && props.categories.find(c => c.id === note.category_id)?.name.toLowerCase().includes(query))
     );
     setFilteredNotes(filtered);
-  }, [props.searchQuery, notes]);
+  }, [props.searchQuery, notes, props.categories]);
 
   const handleDelete = async (noteId: string) => {
     if (!confirm('Are you sure you want to delete this note?')) return;
@@ -141,13 +141,13 @@ const NoteGrid = ({ notes, viewMode, ...props }: NoteGridProps) => {
                       <p className="text-gray-600 mb-4">{note.content}</p>
                       
                       <div className="flex justify-between items-center mt-auto">
-                        {note.category && (
+                        {note.category_id && (
                           <span className="inline-block px-2 py-1 text-sm bg-gray-100 rounded">
-                            {note.category.name}
+                            {props.categories.find(c => c.id === note.category_id)?.name}
                           </span>
                         )}
                         <span className="text-sm text-gray-500">
-                          {new Date(note.createdAt).toLocaleDateString('en-US', {
+                          {new Date(note.created_at).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'short',
                             day: 'numeric',
@@ -170,6 +170,7 @@ const NoteGrid = ({ notes, viewMode, ...props }: NoteGridProps) => {
         <EditNoteModal
           note={editingNote}
           isOpen={!!editingNote}
+          onSubmit={props.onEdit}
           onClose={() => {
             setEditingNote(null);
             fetchNotes();
@@ -182,5 +183,4 @@ const NoteGrid = ({ notes, viewMode, ...props }: NoteGridProps) => {
   );
 };
 
-export type NoteGridProps = NoteGridProps;
 export default NoteGrid; 

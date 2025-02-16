@@ -2,14 +2,15 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
 
-type ViewMode = 'grid' | 'list';
+export type ViewMode = 'grid' | 'list';
 
-interface ViewModeContextType {
+export const ViewModeContext = createContext<{
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
-}
-
-const ViewModeContext = createContext<ViewModeContextType | undefined>(undefined);
+}>({
+  viewMode: 'grid',
+  setViewMode: () => {},
+});
 
 export function ViewModeProvider({ children }: { children: React.ReactNode }) {
   // Initialize with localStorage value or default to 'grid'
