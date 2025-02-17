@@ -14,7 +14,9 @@ import {
   PencilIcon as EditIcon,
   ViewGridIcon as DragIcon,
   MagnifyingGlassIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  FolderIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 import { ViewModeProvider, useViewMode } from './contexts/ViewModeContext';
@@ -340,13 +342,13 @@ export default function NotesPage() {
               <h1 className="text-2xl font-bold text-gray-900">My Notes</h1>
               <div className="flex items-center space-x-4">
           
-                <div className="flex space-x-4 mb-4">
+                {/* <div className="flex space-x-4 mb-4">
                   <button
                     className="flex items-center space-x-2 px-4 py-2 bg-white rounded-lg shadow hover:bg-gray-50"
                     onClick={() => setShowStats(true)}
                   >
                     <ChartBarIcon className="h-5 w-5 text-gray-500" />
-                    <span>Show Stats</span>
+                    <span>Show Stats11</span>
                   </button>
 
                   <button
@@ -356,7 +358,7 @@ export default function NotesPage() {
                     <FolderIcon className="h-5 w-5 text-gray-500" />
                     <span>Manage Categories</span>
                   </button>
-                </div>
+                </div> */}
                
                 <button
                   onClick={() => setIsCreateModalOpen(true)}
@@ -383,7 +385,7 @@ export default function NotesPage() {
 
             {/* Filters */}
             <div className="flex flex-wrap gap-4">
-              <select
+              {/* <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="select-input"
@@ -394,9 +396,9 @@ export default function NotesPage() {
                     {category.name}
                   </option>
                 ))}
-              </select>
+              </select> */}
 
-              <select
+              {/* <select
                 value={timeFilter}
                 onChange={(e) => setTimeFilter(e.target.value)}
                 className="select-input"
@@ -405,7 +407,7 @@ export default function NotesPage() {
                 <option>Last 7 Days</option>
                 <option>Last 30 Days</option>
                 <option>This Year</option>
-              </select>
+              </select> */}
 
               {/* Sort Buttons */}
               <div className="flex rounded-lg shadow-sm bg-white">
