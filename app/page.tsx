@@ -339,8 +339,7 @@ export default function NotesPage() {
             <div className="flex justify-between items-center">
               <h1 className="text-2xl font-bold text-gray-900">My Notes</h1>
               <div className="flex items-center space-x-4">
-                {/* Tạm thời ẩn các tính năng chưa hoàn thiện */}
-                {/* 
+          
                 <div className="flex space-x-4 mb-4">
                   <button
                     className="flex items-center space-x-2 px-4 py-2 bg-white rounded-lg shadow hover:bg-gray-50"
@@ -358,7 +357,7 @@ export default function NotesPage() {
                     <span>Manage Categories</span>
                   </button>
                 </div>
-                */}
+               
                 <button
                   onClick={() => setIsCreateModalOpen(true)}
                   className="btn-primary"
@@ -384,26 +383,29 @@ export default function NotesPage() {
 
             {/* Filters */}
             <div className="flex flex-wrap gap-4">
-              {/* Tạm thời ẩn filter menus */}
-              {/*
-              <div className="flex space-x-4 mb-4">
-                <Menu as="div" className="relative">
-                  <Menu.Button className="flex items-center space-x-2 px-4 py-2 bg-white rounded-lg shadow hover:bg-gray-50">
-                    <span>{selectedCategory?.name || 'All Categories'}</span>
-                    <ChevronDownIcon className="h-5 w-5 text-gray-500" />
-                  </Menu.Button>
-                  {/* Category dropdown content */}
-                </Menu>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="select-input"
+              >
+                <option>All Categories</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
 
-                <Menu as="div" className="relative">
-                  <Menu.Button className="flex items-center space-x-2 px-4 py-2 bg-white rounded-lg shadow hover:bg-gray-50">
-                    <span>{timeFilter}</span>
-                    <ChevronDownIcon className="h-5 w-5 text-gray-500" />
-                  </Menu.Button>
-                  {/* Time filter dropdown content */}
-                </Menu>
-              </div>
-              */}
+              <select
+                value={timeFilter}
+                onChange={(e) => setTimeFilter(e.target.value)}
+                className="select-input"
+              >
+                <option>All Time</option>
+                <option>Last 7 Days</option>
+                <option>Last 30 Days</option>
+                <option>This Year</option>
+              </select>
 
               {/* Sort Buttons */}
               <div className="flex rounded-lg shadow-sm bg-white">
